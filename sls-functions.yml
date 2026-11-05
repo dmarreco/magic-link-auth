@@ -1,0 +1,72 @@
+# (1-5) POST /login-nopwd: check user, encrypt token (KMS), store it (DynamoDB), email it (SES)
+loginNoPwd:
+  name: ${self:provider.stage}-user-loginNoPwd
+  handler: src/handlers/login-no-pwd.handler
+  memorySize: 512
+  timeout: 10
+  environment:
+    KMS_KEY_ID: !Ref AuthChallengeKmsKey
+    OTP_TOKEN_TABLE: !Ref OtpTokenTable
+    USER_TABLE: !Ref UserTable
+    FRONTEND_BASE_URL: ${param:frontendBaseUrl}
+    MAGIC_LINK_EXPIRATION_MINUTES: ${param:magicLinkExpirationMinutes}
+  events:
+    - http:
+        path: /login-nopwd
+        method: post
+        cors: true
+  iamRoleStatementsInherit: true
+  iamRoleStatements:
+    - Effect: Allow
+      Action: dynamodb:GetItem
+      Resource: !GetAtt UserTable.Arn
+    - Effect: Allow
+      Action: dynamodb:PutItem
+      Resource: !GetAtt OtpTokenTable.Arn
+    - Effect: Allow
+      Action: kms:Encrypt
+      Resource: !GetAtt AuthChallengeKmsKey.Arn
+    - Effect: Allow
+      Action: ses:SendEmail
+      Resource: !Sub arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*
+
+# (8-15) Cognito custom auth triggers, wired to the user pool in sls-resources.yml.
+# Cognito has a hard 5s limit on trigger invocations.
+createAuthChallenge:
+  name: ${self:provider.stage}-${self:service}-createAuthChallenge
+  handler: src/handlers/create-auth-challenge.handler
+  memorySize: 512
+  timeout: 5
+  environment:
+    OTP_TOKEN_TABLE: !Ref OtpTokenTable
+  iamRoleStatementsInherit: true
+  iamRoleStatements:
+    - Effect: Allow
+      Action: dynamodb:GetItem
+      Resource: !GetAtt OtpTokenTable.Arn
+
+defineAuthChallenge:
+  name: ${self:provider.stage}-${self:service}-defineAuthChallenge
+  handler: src/handlers/define-auth-challenge.handler
+  memorySize: 512
+  timeout: 5
+  environment:
+    OTP_TOKEN_TABLE: !Ref OtpTokenTable
+  iamRoleStatementsInherit: true
+  iamRoleStatements:
+    - Effect: Allow
+      Action: dynamodb:DeleteItem
+      Resource: !GetAtt OtpTokenTable.Arn
+
+verifyAuthChallengeResponse:
+  name: ${self:provider.stage}-${self:service}-verifyAuthChallengeResponse
+  handler: src/handlers/verify-auth-challenge-response.handler
+  memorySize: 512
+  timeout: 5
+  environment:
+    KMS_KEY_ID: !Ref AuthChallengeKmsKey
+  iamRoleStatementsInherit: true
+  iamRoleStatements:
+    - Effect: Allow
+      Action: kms:Decrypt
+      Resource: !GetAtt AuthChallengeKmsKey.Arn

@@ -1,0 +1,49 @@
+service: magic-link-auth
+frameworkVersion: '3'
+
+plugins:
+  - serverless-esbuild
+  - serverless-iam-roles-per-function
+
+package:
+  individually: true
+
+useDotenv: true
+
+params:
+  default:
+    frontendBaseUrl: https://app.example.com
+    magicLinkExpirationMinutes: 5
+
+custom:
+  defaultStage: dev
+  defaultRegion: us-east-1
+  resourcePrefix: ${self:provider.stage}
+  userTableName: ${self:custom.resourcePrefix}-user
+  otpTokenTableName: ${self:custom.resourcePrefix}-user-otp-token
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: true
+    target: node20
+    platform: node
+    format: cjs
+    # AWS SDK v3 is provided by the nodejs20.x runtime
+    exclude:
+      - '@aws-sdk/*'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  stage: ${opt:stage, self:custom.defaultStage}
+  stackName: ${self:provider.stage}-${self:service}
+  region: ${opt:region, self:custom.defaultRegion}
+  logRetentionInDays: 30
+  versionFunctions: false
+  environment:
+    NODE_OPTIONS: --enable-source-maps
+    POWERTOOLS_SERVICE_NAME: ${self:service}
+
+functions: ${file(./sls-functions.yml)}
+
+resources: ${file(./sls-resources.yml)}

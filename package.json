@@ -1,0 +1,37 @@
+{
+  "name": "magic-link-auth",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Passwordless (magic link) authentication with Cognito custom auth, KMS, DynamoDB and SES",
+  "scripts": {
+    "sls": "serverless",
+    "build": "tsc --noEmit",
+    "package": "serverless package",
+    "deploy": "serverless deploy --verbose",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@aws-lambda-powertools/logger": "^2.36.0",
+    "@aws-sdk/client-dynamodb": "^3.1163.0",
+    "@aws-sdk/client-kms": "^3.1163.0",
+    "@aws-sdk/client-ses": "^3.1163.0",
+    "@aws-sdk/lib-dynamodb": "^3.1163.0",
+    "env-var": "^7.5.0",
+    "neverthrow": "^8.2.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.164",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20",
+    "aws-sdk-client-mock": "^4.1.0",
+    "esbuild": "^0.28.2",
+    "jest": "^30.5.2",
+    "serverless": "^3.38.0",
+    "serverless-esbuild": "^1.57.2",
+    "serverless-iam-roles-per-function": "^3.2.0",
+    "ts-jest": "^29.4.15",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  }
+}
